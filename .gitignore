@@ -21,6 +21,9 @@ pip-wheel-metadata/
 # Streamlit
 .streamlit/secrets.toml
 
+# Challenge 2: local high score (optional to track; keep local)
+high_score.txt
+
 # Test and coverage artifacts
 .pytest_cache/
 .coverage
@@ -41,3 +44,5 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+.cursorindexingignore

@@ -1,68 +1,38 @@
+import os
 import random
 import streamlit as st
 
-def get_range_for_difficulty(difficulty: str):
-    if difficulty == "Easy":
-        return 1, 20
-    if difficulty == "Normal":
-        return 1, 100
-    if difficulty == "Hard":
-        return 1, 50
-    return 1, 100
+# FIX: Refactored core game logic into logic_utils.py with AI pair programming; UI stays here.
+from logic_utils import (
+    check_guess,
+    get_range_for_difficulty,
+    parse_guess,
+    update_score,
+)
+
+# Challenge 2 (Agent): High score persisted to file; path chosen so it works from project root.
+HIGH_SCORE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "high_score.txt")
 
 
-def parse_guess(raw: str):
-    if raw is None:
-        return False, None, "Enter a guess."
-
-    if raw == "":
-        return False, None, "Enter a guess."
-
+def load_high_score():
+    """Load best score from file; return 0 if file missing or invalid."""
     try:
-        if "." in raw:
-            value = int(float(raw))
-        else:
-            value = int(raw)
-    except Exception:
-        return False, None, "That is not a number."
-
-    return True, value, None
+        if os.path.isfile(HIGH_SCORE_FILE):
+            with open(HIGH_SCORE_FILE, "r", encoding="utf-8") as f:
+                return int(f.read().strip())
+    except (ValueError, OSError):
+        pass
+    return 0
 
 
-def check_guess(guess, secret):
-    if guess == secret:
-        return "Win", "🎉 Correct!"
-
+def save_high_score(score: int):
+    """Overwrite high score file with new best score."""
     try:
-        if guess > secret:
-            return "Too High", "📈 Go HIGHER!"
-        else:
-            return "Too Low", "📉 Go LOWER!"
-    except TypeError:
-        g = str(guess)
-        if g == secret:
-            return "Win", "🎉 Correct!"
-        if g > secret:
-            return "Too High", "📈 Go HIGHER!"
-        return "Too Low", "📉 Go LOWER!"
+        with open(HIGH_SCORE_FILE, "w", encoding="utf-8") as f:
+            f.write(str(score))
+    except OSError:
+        pass
 
-
-def update_score(current_score: int, outcome: str, attempt_number: int):
-    if outcome == "Win":
-        points = 100 - 10 * (attempt_number + 1)
-        if points < 10:
-            points = 10
-        return current_score + points
-
-    if outcome == "Too High":
-        if attempt_number % 2 == 0:
-            return current_score + 5
-        return current_score - 5
-
-    if outcome == "Too Low":
-        return current_score - 5
-
-    return current_score
 
 st.set_page_config(page_title="Glitchy Guesser", page_icon="🎮")
 
@@ -89,6 +59,24 @@ low, high = get_range_for_difficulty(difficulty)
 st.sidebar.caption(f"Range: {low} to {high}")
 st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
 
+# Challenge 2 (Agent): High Score tracker — load once per session, show in sidebar.
+if "high_score" not in st.session_state:
+    st.session_state.high_score = load_high_score()
+st.sidebar.metric("🏆 High Score", st.session_state.high_score)
+
+# Challenge 2 (Agent): Guess History sidebar — visualize how close each guess was.
+st.sidebar.subheader("Guess History")
+secret_int = st.session_state.secret
+if st.session_state.history:
+    for i, g in enumerate(st.session_state.history):
+        if isinstance(g, int):
+            off = abs(g - secret_int)
+            st.sidebar.caption(f"Guess {i + 1}: **{g}** — off by {off}")
+        else:
+            st.sidebar.caption(f"Guess {i + 1}: `{g}` (invalid)")
+else:
+    st.sidebar.caption("_No guesses yet._")
+
 if "secret" not in st.session_state:
     st.session_state.secret = random.randint(low, high)
 
@@ -103,6 +91,10 @@ if "status" not in st.session_state:
 
 if "history" not in st.session_state:
     st.session_state.history = []
+
+# Challenge 4: Summary table data (attempt, guess, result, off-by) for session table.
+if "history_details" not in st.session_state:
+    st.session_state.history_details = []
 
 st.subheader("Make a guess")
 
@@ -133,6 +125,9 @@ with col3:
 
 if new_game:
     st.session_state.attempts = 0
+    st.session_state.history = []
+    st.session_state.history_details = []
+    # FIXME: Logic breaks here — New Game uses (1, 100) instead of current difficulty range (low, high)
     st.session_state.secret = random.randint(1, 100)
     st.success("New game started.")
     st.rerun()
@@ -160,10 +155,34 @@ if submit:
         else:
             secret = st.session_state.secret
 
+        # FIX: check_guess from logic_utils returns correct hint direction; verified with pytest.
         outcome, message = check_guess(guess_int, secret)
+        secret_int_val = st.session_state.secret
+        distance = abs(guess_int - secret_int_val)
+
+        # Challenge 4: Store row for summary table (core logic unchanged).
+        st.session_state.history_details.append({
+            "Attempt": st.session_state.attempts,
+            "Guess": guess_int,
+            "Result": outcome,
+            "Off by": distance,
+        })
 
         if show_hint:
-            st.warning(message)
+            # Challenge 4: Color-coded hints and Hot/Cold feedback.
+            if outcome == "Win":
+                st.success(message)
+            elif outcome == "Too High":
+                st.error(message)
+            else:
+                st.warning(message)
+            if outcome != "Win":
+                if distance <= 5:
+                    st.caption("🔥 **Hot!** Very close.")
+                elif distance <= 15:
+                    st.caption("🌡️ **Warm**")
+                else:
+                    st.caption("❄️ **Cold**")
 
         st.session_state.score = update_score(
             current_score=st.session_state.score,
@@ -174,6 +193,10 @@ if submit:
         if outcome == "Win":
             st.balloons()
             st.session_state.status = "won"
+            # Challenge 2 (Agent): persist new high score to file when player beats it.
+            if st.session_state.score > st.session_state.high_score:
+                st.session_state.high_score = st.session_state.score
+                save_high_score(st.session_state.high_score)
             st.success(
                 f"You won! The secret was {st.session_state.secret}. "
                 f"Final score: {st.session_state.score}"
@@ -186,6 +209,15 @@ if submit:
                     f"The secret was {st.session_state.secret}. "
                     f"Score: {st.session_state.score}"
                 )
+
+# Challenge 4: Session summary table (does not change game logic).
+if st.session_state.history_details:
+    st.subheader("Session summary")
+    st.dataframe(
+        st.session_state.history_details,
+        use_container_width=True,
+        hide_index=True,
+    )
 
 st.divider()
 st.caption("Built by an AI that claims this code is production-ready.")
