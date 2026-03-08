@@ -76,10 +76,10 @@ One habit I want to reuse is writing a small test that targets the exact bug (e.
 
 ## Challenge 5: AI Model Comparison
 
-I asked two different models to fix the **backwards hints** bug (Phase 1): Copilot Chat and ChatGPT (or Gemini). Here's how they compared.
+I asked two different models to fix the **backwards hints** bug (Phase 1): Copilot Chat and Gemini. Here's how they compared.
 
 **Copilot Chat** suggested swapping the two return messages in `check_guess`: when `guess > secret` return "Go LOWER!" and when `guess < secret` return "Go HIGHER!". The fix was short and in-place. The explanation was brief: it said the labels were reversed and showed the corrected lines. **Readability:** Very good—minimal change, easy to review. **Explanation of "why":** It stated that the logic was inverted but did not spell out that "too high" means the player should guess lower next time.
 
-**ChatGPT (or Gemini)** proposed the same logical fix (swap the messages) but added a sentence like: "When the guess is too high, the player needs to go lower to get closer to the secret, so the hint should say 'Go LOWER!'" It also suggested adding a unit test that checks the message text. **Readability:** Good—slightly more verbose. **Explanation of "why":** Clearer: it explicitly tied "too high" → "go lower" to the goal of getting closer to the secret.
+**Gemini** proposed the same logical fix (swap the messages) but added a sentence like: "When the guess is too high, the player needs to go lower to get closer to the secret, so the hint should say 'Go LOWER!'" It also suggested adding a unit test that checks the message text. **Readability:** Good—slightly more verbose. **Explanation of "why":** Clearer: it explicitly tied "too high" → "go lower" to the goal of getting closer to the secret.
 
 **Summary:** Both models produced a correct, readable fix. The second model (ChatGPT/Gemini) explained the "why" more clearly by connecting the hint to the player's next action. Copilot's fix was a bit more concise and easier to drop straight into the codebase.
