@@ -29,16 +29,13 @@ It wrote the code, ran away, and now the game is unplayable.
 - **Bugs found:** (1) Hints were backwards (too high showed "Go HIGHER!", too low showed "Go LOWER!"); (2) New Game always used range 1–100 instead of the selected difficulty range; (3) attempts started at 1 before the first guess (off-by-one); (4) invalid input (empty or non-numeric) still consumed an attempt.
 - **Fixes applied:** Refactored core logic (`check_guess`, `parse_guess`, `get_range_for_difficulty`, `update_score`) into `logic_utils.py` and fixed hint direction in `check_guess` (too high → "Go LOWER!", too low → "Go HIGHER!"). Added pytest tests for hint direction and `pytest.ini` so `pytest` finds `logic_utils` from the project root. The app uses `st.session_state` for the secret so it stays stable across reruns.
 
-**Write Reflection:** Complete the questions in `reflection.md` (what was broken, how you used AI, debugging and testing, Streamlit and state, and habits going forward).
-
 ## 📸 Demo
 
-- Run the app: `python -m streamlit run app.py`. Choose a difficulty, use the Developer Debug Info to see the secret if needed, then win by following the corrected hints ("Go LOWER!" when too high, "Go HIGHER!" when too low).
-- [ ] [Insert a screenshot of your fixed, winning game here]
+<img width="654" height="740" alt="image" src="https://github.com/user-attachments/assets/25efa396-16ec-4931-8a52-7f56f5fdb99c" />
 
----
+## 🚀 Stretch Features
 
-## Challenge 1: Advanced Edge-Case Testing
+### Challenge 1: Advanced Edge-Case Testing
 
 Three edge-case inputs are covered by pytest: **negative numbers** (e.g. `-5`), **decimals** (e.g. `33.7`, truncated to int), and **very large values** (e.g. `999999999`). The suite verifies that `parse_guess` and `check_guess` handle these without crashing and with consistent behavior. Run:
 
@@ -46,13 +43,11 @@ Three edge-case inputs are covered by pytest: **negative numbers** (e.g. `-5`), 
 pytest tests/test_game_logic.py -v
 ```
 
-**Screenshot:** Add a screenshot below showing the terminal with the `pytest` command and all tests passing (e.g. 8 passed).
+**Screenshot:**
 
-- [ ] [Insert screenshot: `pytest tests/test_game_logic.py -v` with test results here]
+<img width="906" height="254" alt="image" src="https://github.com/user-attachments/assets/f84c4eb9-460b-40b8-83b4-90da037aedea" />
 
----
-
-## Challenge 2: Feature Expansion (Agent Mode)
+### Challenge 2: Feature Expansion via Agent Mode
 
 **High Score tracker:** The best score is saved to `high_score.txt` in the project directory and loaded on startup. When you win with a score higher than the stored value, it is updated and shown in the sidebar metric "🏆 High Score".
 
@@ -60,27 +55,12 @@ pytest tests/test_game_logic.py -v
 
 The agent contributed by proposing the file path for `high_score.txt` (using `os.path.dirname(os.path.abspath(__file__))` so it works when running from the project root), the structure of `load_high_score` / `save_high_score`, and the sidebar layout for Guess History (enumerating `st.session_state.history` and computing distance from the current secret). See comments in `app.py` marked "Challenge 2 (Agent)".
 
----
-
-## Challenge 3: Documentation and Linting
-
-- **Docstrings:** Every function in `logic_utils.py` has a professional-style docstring (module summary, Args, Returns, and brief description). Generated with the "Generate documentation" smart action and then refined.
-- **PEP 8:** The code was reviewed for style (line length, naming, spacing). Fixes included a module-level docstring, consistent return type hints, and removal of redundant `else` after `return`.
-
----
-
-## Challenge 4: Enhanced Game UI
+### Challenge 4: Enhanced Game UI
 
 - **Color-coded hints:** Win → green (`st.success`), Too High → red (`st.error`), Too Low → orange (`st.warning`).
 - **Hot/Cold feedback:** After each non-winning guess, a caption shows 🔥 **Hot!** (off by ≤5), 🌡️ **Warm** (off by ≤15), or ❄️ **Cold** (otherwise).
 - **Session summary table:** A "Session summary" dataframe lists each attempt with columns Attempt, Guess, Result, and Off by. It appears once you have at least one valid guess and does not change core game logic.
 
-**Screenshot:** Add a screenshot of the enhanced player experience (hints, hot/cold, and summary table visible).
+**Screenshot:**
 
-- [ ] [Insert a screenshot of your Enhanced Game UI here]
-
----
-
-## 🚀 Stretch Features
-
-- [ ] [If you complete additional stretch work, add a screenshot or link here.]
+<img width="753" height="793" alt="image" src="https://github.com/user-attachments/assets/b87df0b1-29f8-4a9b-9ea2-096d6c8b14e9" />
